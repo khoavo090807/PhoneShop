@@ -1,0 +1,35 @@
+﻿@model IEnumerable<LTW_NHOM8.Models.CategoryGroup>
+
+@{
+    var selectedCat = Request.QueryString["categoryId"];
+}
+
+<div class="navbar-nav w-100">
+    @foreach (var g in Model)
+    {
+        if (g.Categories != null && g.Categories.Any())
+        {
+            <div class="nav-item dropdown dropright">
+                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+                    @g.GroupName <i class="fa fa-angle-right float-right mt-1"></i>
+                </a>
+
+                <div class="dropdown-menu position-absolute rounded-0 border-0 m-0">
+                    @foreach (var c in g.Categories)
+                    {
+                        <a class="dropdown-item js-category @(selectedCat == c.CategoryId.ToString() ? "active font-weight-bold" : "")"
+                           href="#"
+                           data-categoryid="@c.CategoryId">
+                            @c.CategoryName
+                        </a>
+
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <a class="nav-item nav-link" href="#">@g.GroupName</a>
+        }
+    }
+</div>

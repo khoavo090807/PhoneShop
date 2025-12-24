@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="93f19cbec4b74232b93800dc22790312" Name="Diagram1">
+        <EntityTypeShape EntityType="DB_LTWModel.Category" Width="1.5" PointX="3" PointY="2.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.CategoryGroup" Width="1.5" PointX="0.75" PointY="2.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.OrderItem" Width="1.5" PointX="7.5" PointY="2.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.Order" Width="1.5" PointX="5.25" PointY="7.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.ProductImage" Width="1.5" PointX="7.5" PointY="6" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.Product" Width="1.5" PointX="5.25" PointY="2" IsExpanded="true" />
+        <EntityTypeShape EntityType="DB_LTWModel.User" Width="1.5" PointX="3" PointY="7.375" IsExpanded="true" />
+        <AssociationConnector Association="DB_LTWModel.FK_Categories_CategoryGroups" ManuallyRouted="false" />
+        <AssociationConnector Association="DB_LTWModel.FK_OrderItems_Orders" ManuallyRouted="false" />
+        <AssociationConnector Association="DB_LTWModel.FK_OrderItems_Products" ManuallyRouted="false" />
+        <AssociationConnector Association="DB_LTWModel.FK_Orders_Users" ManuallyRouted="false" />
+        <AssociationConnector Association="DB_LTWModel.FK_ProductImages_Products" ManuallyRouted="false" />
+        <AssociationConnector Association="DB_LTWModel.CategoryDetails" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
