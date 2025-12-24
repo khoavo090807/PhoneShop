@@ -1,1 +1,198 @@
-﻿
+﻿@model LTW_NHOM8.Models.Product
+
+@{
+    ViewBag.Title = Model?.ProductName ?? "Chi tiết sản phẩm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="py-4">
+    <div class="container">
+        <div class="row g-4">
+            <aside class="col-12 col-lg-2">
+                @Html.Action("MenuVertical", "Category")
+            </aside>
+
+            <main class="col-12 col-lg-9">
+                <div class="row g-4">
+                    <div class="col-12 col-lg-7">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                @{
+                                    // Robust image resolver: thử nhiều nơi và kiểm tra tồn tại file trên disk
+                                    Func<string, string> resolveImage = (string p) =>
+                                    {
+                                        if (string.IsNullOrWhiteSpace(p))
+                                        {
+                                            return Url.Content("~/Content/img/no-image.png");
+                                        }
+
+                                        var s = p.Trim();
+
+                                        // full URL -> trả nguyên
+                                        if (s.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            return s;
+                                        }
+
+                                        // already app-relative or site-root-relative
+                                        if (s.StartsWith("~/") || s.StartsWith("/"))
+                                        {
+                                            var appRel = s.StartsWith("~/") ? s : "~" + s;
+                                            var phys = Server.MapPath(appRel);
+                                            if (System.IO.File.Exists(phys)) return Url.Content(appRel);
+                                            return Url.Content(appRel); // trả Url dù file không tồn tại (fallback)
+                                        }
+
+                                        // thử các vị trí phổ biến theo thứ tự ưu tiên
+                                        var candidates = new List<string>
+                                        {
+                                            "~/Content/img/main/" + s,
+                                            "~/Content/img/" + s,
+                                            "~/" + s // trường hợp DB đã lưu "Content/..." hoặc "uploads/..."
+                };
+
+                                        foreach (var c in candidates)
+                                        {
+                                            try
+                                            {
+                                                var phys = Server.MapPath(c);
+                                                if (System.IO.File.Exists(phys))
+                                                {
+                                                    return Url.Content(c);
+                                                }
+                                            }
+                                            catch
+                                            {
+                                                // ignore mapping errors, tiếp tục thử
+                                            }
+                                        }
+
+                                        // nếu không tìm file trên disk, nhưng chuỗi chứa "Content/" thì trả Url trực tiếp
+                                        if (s.IndexOf("Content/", StringComparison.OrdinalIgnoreCase) >= 0
+                                            || s.IndexOf("img/", StringComparison.OrdinalIgnoreCase) >= 0)
+                                        {
+                                            return Url.Content("~/" + s.TrimStart('~', '/'));
+                                        }
+
+                                        // fallback: giả định là tên file trong ~/Content/img/main/
+                                        return Url.Content("~/Content/img/main/" + s);
+                                    };
+
+                                    // determine main image url
+                                    var mainImage = Url.Content("~/Content/img/no-image.png");
+                                    if (!string.IsNullOrEmpty(Model.MainImage))
+                                    {
+                                        mainImage = resolveImage(Model.MainImage);
+                                    }
+                                    else if (Model.ProductImages != null && Model.ProductImages.Any())
+                                    {
+                                        mainImage = resolveImage(Model.ProductImages.First().ImageUrl);
+                                    }
+                                }
+
+                                <!-- Render main image with <img> so browser loads it directly -->
+                                <div class="mb-2">
+                                    <img src="@mainImage" alt="@Model.ProductName" class="img-fluid w-100 rounded-3" style="height:430px; object-fit:cover;" />
+                                </div>
+
+                                @*<div class="row g-2 mt-2">
+                                    @{
+                                        var thumbs = (Model.ProductImages ?? Enumerable.Empty<LTW_NHOM8.Models.ProductImage>()).Take(4).ToList();
+                                        if (!thumbs.Any() && !string.IsNullOrEmpty(Model.MainImage))
+                                        {
+                                            thumbs = new List<LTW_NHOM8.Models.ProductImage> {
+                                                new LTW_NHOM8.Models.ProductImage { ImageUrl = Model.MainImage }
+                                            };
+                                        }
+                                    }
+                                    @foreach (var t in thumbs)
+                                    {
+                                        var thumbUrl = resolveImage(t.ImageUrl);
+                                        <div class="col-3">
+                                            <img src="@thumbUrl" alt="" class="img-fluid rounded-3 border" style="height:100px; object-fit:cover; width:100%;" />
+                                        </div>
+                                    }
+                                </div>*@
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mt-3">
+                            <div class="card-body">
+                                <h5 class="mb-2">Mô tả</h5>
+                                <p>@Html.Raw(Model.Summary ?? "Chưa có mô tả")</p>
+                                <ul class="mb-0">
+                                    <li>✔ Bảo hành chính hãng 24 tháng</li>
+                                    <li>✔ Hỗ trợ đổi mới trong 14 ngày.</li>
+                                    <li>✔ Miễn phí giao hàng toàn quốc.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-5">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <nav class="small mb-2 text-muted">Dịp / <strong>@(Model.Categories.FirstOrDefault()?.CategoryName ?? "Sản phẩm")</strong></nav>
+                                <h3 class="h5 mb-0">@Model.ProductName</h3>
+                                <div class="mt-2"><span class="h4">@string.Format("{0:N0} đ", Model.Price)</span></div>
+                                <hr />
+                                @using (Html.BeginForm("AddToCart", "Cart", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    @Html.Hidden("productId", Model.ProductId)
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Số lượng</label>
+                                        <select name="quantity" class="form-select">
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Tùy chọn</label>
+                                        <select name="option" class="form-select">
+                                            <option>Tiêu chuẩn</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-danger btn-lg rounded-pill">Thêm vào giỏ</button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="mt-4">Sản phẩm liên quan</h5>
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    @{
+                        var related = ViewBag.RelatedProducts as List<LTW_NHOM8.Models.Product> ?? new List<LTW_NHOM8.Models.Product>();
+                        foreach (var r in related)
+                        {
+                            // reuse resolver
+                            var img = !string.IsNullOrEmpty(r.MainImage) ? resolveImage(r.MainImage) :
+                                      (r.ProductImages != null && r.ProductImages.Any() ? resolveImage(r.ProductImages.First().ImageUrl) : Url.Content("~/Content/img/placeholder.jpg"));
+                            <div class="col">
+                                <article class="card-product card h-100">
+                                    <a href="@Url.Action("Details", "Product", new { id = r.ProductId })" class="text-decoration-none">
+                                        <div class="thumb" style="background-image:url('@img');height:140px;background-size:cover;background-position:center;"></div>
+                                    </a>
+                                    <div class="p-3">
+                                        <h6 class="mb-1 "><a href="@Url.Action("Details", "Product", new { id = r.ProductId })" class="link-dark">@r.ProductName</a></h6>
+                                        <div class="text-muted small">@r.Summary</div>
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <span class="fw-semibold">@string.Format("{0:N0} đ", r.Price)</span>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        }
+                    }
+                </div>
+            </main>
+        </div>
+    </div>
+</section>

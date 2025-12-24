@@ -1,0 +1,137 @@
+﻿@model List<LTW_NHOM8.Models.CartItem>
+
+@{
+    ViewBag.Title = "Giỏ hàng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">Sản phẩm đã chọn</h5>
+                        @if (Model == null || !Model.Any())
+                        {
+                            <p>Giỏ hàng trống.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px"></th>
+                                        <th>Sản phẩm</th>
+                                        <th style="width:110px">Số lượng</th>
+                                        <th style="width:120px">Đơn giá</th>
+                                        <th style="width:140px">Thành tiền</th>
+                                        <th style="width:80px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        var imgSrc = string.IsNullOrEmpty(item.Image)
+                                            ? Url.Content("~/Content/img/no-image.png")
+                                            : Url.Content("~/Content/img/main/" + item.Image);
+
+                                        <tr>
+                                            <td>
+                                                <img src="@imgSrc" alt="@item.ProductName" class="img-fluid" style="width:64px;height:64px;object-fit:cover;border-radius:6px;" />
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold">@item.ProductName</div>
+                                                <div class="text-muted small">@item.CategoryName</div>
+                                            </td>
+                                            <td>
+                                                @using (Html.BeginForm("UpdateQuantity", "Cart", FormMethod.Post))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    @Html.Hidden("productId", item.ProductId)
+                                                    <div class="input-group input-group-sm">
+                                                        @* THÊM: class="quantity-input" và các data- để JS tính toán *@
+                                                        <input type="number" name="quantity" value="@item.Quantity" min="1"
+                                                               class="form-control quantity-input" style="width:70px"
+                                                               data-id="@item.ProductId"
+                                                               data-price="@item.Price" />
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">OK</button>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td class="align-middle">@string.Format("{0:N0} đ", item.Price)</td>
+                                            @* THÊM: class="line-total" *@
+                                            <td class="align-middle fw-bold line-total">@string.Format("{0:N0} đ", item.Total)</td>
+                                            <td class="align-middle text-end">
+                                                <a href="@Url.Action("Remove", "Cart", new { productId = item.ProductId })" class="text-danger">Xóa</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Tạm tính</h6>
+                            @* THÊM: class="grand-total-display" *@
+                            <h5 class="mb-0 grand-total-display">@string.Format("{0:N0} đ", Model?.Sum(x => x.Total) ?? 0)</h5>
+                        </div>
+                        <div class="text-muted small mb-3">Phí gói: 0đ</div>
+                        <hr />
+                        <a href="@Url.Action("Index","Product")" class="btn btn-outline-secondary btn-block mb-2">Tiếp tục mua</a>
+                        <a href="@Url.Action("Index","Checkout")" class="btn btn-danger btn-block">Tiến hành đặt hàng</a>
+                        <p class="small text-muted mt-2">Đăng nhập trước khi đặt hàng.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Lắng nghe sự kiện thay đổi số lượng
+    $('.quantity-input').on('input change', function () {
+        var input = $(this);
+        var quantity = parseInt(input.val());
+        var price = parseFloat(input.data('price'));
+        var productId = input.data('id');
+
+        if (isNaN(quantity) || quantity < 1) {
+            quantity = 1;
+        }
+
+        // 1. Cập nhật Thành tiền của dòng đó ngay lập tức trên giao diện
+        var lineTotal = quantity * price;
+        input.closest('tr').find('.line-total').text(lineTotal.toLocaleString('vi-VN') + " đ");
+
+        // 2. Cập nhật Tổng tiền của cả giỏ hàng trên giao diện
+        var grandTotal = 0;
+        $('.quantity-input').each(function () {
+            var q = parseInt($(this).val()) || 1;
+            var p = parseFloat($(this).data('price')) || 0;
+            grandTotal += (q * p);
+        });
+        $('.grand-total-display').text(grandTotal.toLocaleString('vi-VN') + " đ");
+
+        // 3. (Tùy chọn) Gửi Ajax để lưu vào Session mà không cần bấm OK
+        // Nếu bạn muốn người dùng BẮT BUỘC bấm OK mới lưu thì xóa đoạn $.ajax này đi
+        $.ajax({
+            url: '@Url.Action("UpdateQuantity", "Cart")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: input.closest('form').find('input[name="__RequestVerificationToken"]').val(),
+                productId: productId,
+                quantity: quantity
+            }
+        });
+    });
+});
+</script>
